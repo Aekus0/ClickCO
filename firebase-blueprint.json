@@ -1,0 +1,94 @@
+{
+  "entities": {
+    "user": {
+      "title": "User Profile Settings",
+      "description": "User specific app configuration and options",
+      "type": "object",
+      "properties": {
+        "language": {
+          "type": "string",
+          "enum": ["tr", "en"],
+          "description": "Preferred language style"
+        },
+        "purgeAfterTimer": {
+          "type": "boolean",
+          "description": "Automatically purge conversion after countdown"
+        },
+        "purgeAfterDownload": {
+          "type": "boolean",
+          "description": "Purge from view after downloading"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server updatedAt ISO date-time"
+        }
+      },
+      "required": ["language", "purgeAfterTimer", "purgeAfterDownload", "updatedAt"]
+    },
+    "conversion": {
+      "title": "Conversion Log",
+      "description": "A secure history of file conversions made by an authenticated user",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "description": "The UID owner of the conversion log"
+        },
+        "fileName": {
+          "type": "string",
+          "description": "Name of the converted file"
+        },
+        "originalSize": {
+          "type": "integer",
+          "description": "Size in bytes of original"
+        },
+        "convertedSize": {
+          "type": "integer",
+          "description": "Size in bytes of conversion"
+        },
+        "originalFormat": {
+          "type": "string",
+          "description": "Original file format"
+        },
+        "targetFormat": {
+          "type": "string",
+          "description": "Target converted file format"
+        },
+        "downloadUrl": {
+          "type": "string",
+          "description": "Data URI, base64 data, or reference URL"
+        },
+        "timestamp": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Datetime of conversion completion"
+        },
+        "status": {
+          "type": "string",
+          "enum": ["pending", "converting", "success", "failed"],
+          "description": "Current status of task"
+        },
+        "error": {
+          "type": "string",
+          "description": "Optional failure error message"
+        }
+      },
+      "required": ["userId", "fileName", "originalSize", "convertedSize", "originalFormat", "targetFormat", "downloadUrl", "timestamp", "status"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": {
+        "$ref": "#/entities/user"
+      },
+      "description": "Store user configs"
+    },
+    "/users/{userId}/conversions/{conversionId}": {
+      "schema": {
+        "$ref": "#/entities/conversion"
+      },
+      "description": "Private subcollection containing conversion records for security"
+    }
+  }
+}

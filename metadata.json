@@ -1,0 +1,6 @@
+{
+  "name": "ClickCO",
+  "description": "Görsel ve belge dosyalarını dönüştürebileceğiniz, dahili Captcha güvenlik doğrulamalı yüksek hızlı dönüştürme platformu.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

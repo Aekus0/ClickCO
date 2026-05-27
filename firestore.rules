@@ -1,0 +1,73 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Global Safety Net - Default Deny Catch-All
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Helper functions
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    // Validation Blueprint for Web User Configurations
+    function isValidUser(data) {
+      return data.language is string && (data.language == 'tr' || data.language == 'en')
+        && data.purgeAfterTimer is bool
+        && data.purgeAfterDownload is bool
+        && data.updatedAt == request.time;
+    }
+
+    // User Profile settings resource protection
+    match /users/{userId} {
+      allow get: if isOwner(userId) && isValidId(userId);
+      allow create: if isOwner(userId) && isValidId(userId)
+        && request.resource.data.keys().hasAll(['language', 'purgeAfterTimer', 'purgeAfterDownload', 'updatedAt'])
+        && request.resource.data.keys().size() == 4
+        && isValidUser(request.resource.data);
+      allow update: if isOwner(userId) && isValidId(userId)
+        && isValidUser(request.resource.data)
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['language', 'purgeAfterTimer', 'purgeAfterDownload', 'updatedAt']);
+      allow delete: if isOwner(userId) && isValidId(userId);
+
+      // Validation Blueprint for File Conversion Records
+      function isValidConversion(data, uId) {
+        return data.userId == uId
+          && data.userId == request.auth.uid
+          && data.fileName is string && data.fileName.size() <= 256
+          && data.originalSize is int && data.originalSize >= 0
+          && data.convertedSize is int && data.convertedSize >= 0
+          && data.originalFormat is string && data.originalFormat.size() <= 64
+          && data.targetFormat is string && data.targetFormat.size() <= 64
+          && data.downloadUrl is string && data.downloadUrl.size() <= 2097152 // Up to 2MB allowed for local base64 chunks or blobs
+          && data.timestamp == request.time
+          && data.status is string && (data.status == 'pending' || data.status == 'converting' || data.status == 'success' || data.status == 'failed')
+          && (!('error' in data) || (data.error is string && data.error.size() <= 1024));
+      }
+
+      // Secure Subcollection of Conversion Histories
+      match /conversions/{conversionId} {
+        allow get: if isOwner(userId) && isValidId(userId) && isValidId(conversionId);
+        allow list: if isOwner(userId) && isValidId(userId);
+        allow create: if isOwner(userId) && isValidId(userId) && isValidId(conversionId)
+          && request.resource.data.keys().hasAll(['userId', 'fileName', 'originalSize', 'convertedSize', 'originalFormat', 'targetFormat', 'downloadUrl', 'timestamp', 'status'])
+          && (request.resource.data.keys().size() == 9 || (request.resource.data.keys().size() == 10 && 'error' in request.resource.data))
+          && isValidConversion(request.resource.data, userId);
+        allow update: if isOwner(userId) && isValidId(userId) && isValidId(conversionId)
+          && isValidConversion(request.resource.data, userId)
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'error', 'downloadUrl', 'convertedSize', 'timestamp']);
+        allow delete: if isOwner(userId) && isValidId(userId) && isValidId(conversionId);
+      }
+    }
+  }
+}

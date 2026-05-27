@@ -1,0 +1,9 @@
+{
+  "apiKey": "AIzaSyMockKeyForDevCompilationClickCO",
+  "authDomain": "clickco-mock-dev.firebaseapp.com",
+  "projectId": "clickco-mock-dev",
+  "storageBucket": "clickco-mock-dev.appspot.com",
+  "messagingSenderId": "123456789012",
+  "appId": "1:123456789012:web:abcdef123456",
+  "firestoreDatabaseId": "(default)"
+}
